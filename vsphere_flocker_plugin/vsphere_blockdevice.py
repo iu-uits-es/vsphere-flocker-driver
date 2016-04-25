@@ -19,6 +19,7 @@ import logging
 import uuid
 import time
 import ssl
+import platform
 
 logging.basicConfig(filename='/var/log/flocker/vsphere.log',
                     level=logging.DEBUG,
@@ -63,7 +64,7 @@ class VolumeDestroyFailure(Exception):
 
 class VolumeAttachFailure(Exception):
     """
-    attach volume failed 
+    attach volume failed
     """
 
 
@@ -87,7 +88,7 @@ class GetDevicePathFailure(Exception):
 
 class VsphereBlockDeviceVolume:
     """
-    Data object representing vsphere's BlockDeviceVolume 
+    Data object representing vsphere's BlockDeviceVolume
     """
 
     def __init__(self, blockDeviceVolume, path):
@@ -108,6 +109,11 @@ class VsphereBlockDeviceAPI(object):
     """
     A ``IBlockDeviceAPI`` which creates volumes (vmdks) with vsphere backend.
     """
+
+    """
+    See platform._supported_dists for other short distribution names which may be returned
+    """
+    SGINFO_DISTRIBUTIONS = ['centos', 'redhat']
 
     def __init__(self, cluster_id, vc_ip, username, password,
                  datacenter_name, datastore_name, ssl_verify_cert,
@@ -692,6 +698,10 @@ class VsphereBlockDeviceAPI(object):
         logging.debug('Devices found: {}'.format('.'.join(devices)))
         return devices
 
+    def get_platform(self):
+        platform_dist = platform.linux_distribution(full_distribution_name=0)
+        return platform_dist[0].lower()
+
     def get_device_path(self, blockdevice_id):
         """
         Return the device path that has been allocated to the block device on
@@ -714,8 +724,13 @@ class VsphereBlockDeviceAPI(object):
             devices = self._find_all_disk_devices()
             for device in devices:
                 try:
-                    logging.debug("Executing scsiinfo -s {} ".format(device))
-                    output = check_output(["scsiinfo", "-s", device])
+                    platform_dist = self.get_platform()
+                    if platform_dist in SGINFO_DISTRIBUTIONS:
+                        logging.debug("Executing sginfo -s {} ".format(device))
+                        output = check_output(["sginfo", "-s", device])
+                    else:
+                        logging.debug("Executing scsiinfo -s {} ".format(device))
+                        output = check_output(["scsiinfo", "-s", device])
                     logging.debug(output)
                 except Exception, ex:
                     logging.error("Error occured for scsiinfo -s {}: {}".format(device, ex))
