@@ -725,7 +725,7 @@ class VsphereBlockDeviceAPI(object):
             for device in devices:
                 try:
                     platform_dist = self.get_platform()
-                    if platform_dist in SGINFO_DISTRIBUTIONS:
+                    if platform_dist in self.SGINFO_DISTRIBUTIONS:
                         logging.debug("Executing sginfo -s {} ".format(device))
                         output = check_output(["sginfo", "-s", device])
                     else:
