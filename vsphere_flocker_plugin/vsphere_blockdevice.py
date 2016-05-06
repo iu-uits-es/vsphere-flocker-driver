@@ -674,7 +674,7 @@ class VsphereBlockDeviceAPI(object):
             logging.debug("List volumes finished. Took {} seconds".format(time.time() - start_time))
             return volumes
         except Exception as e:
-            logging.error("List volumes failed with error: " + str(e))
+            logging.error("List volumes failed with error: " + str(e), exc_info=1)
             raise ListVolumesFailure(e)
 
     def _find_all_disk_devices(self):
